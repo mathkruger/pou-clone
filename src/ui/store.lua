@@ -40,6 +40,11 @@ end
 function Store:draw()
   self.ui:drawPanel(20, 120, 440, 560, "Loja")
 
+  -- Close button
+  local closeX = 20 + 440 - 15 - 30
+  local closeY = 120 + 15
+  self.ui:drawButton(closeX, closeY, 30, 30, "X", false)
+
   local tabX = 40
   for _,tab in ipairs(tabOrder) do
     local width = 90
@@ -52,20 +57,24 @@ function Store:draw()
   for i,it in ipairs(visibleItems) do
     self.ui:drawCard(30, y - 6, 420, 44, i == self.selected)
     self.iconManager:drawType(it.type, 50, y + 10, 0.85)
-    love.graphics.setColor(0.2, 0.2, 0.2)
-    love.graphics.print(it.displayName or it.id, 75, y)
-    self.iconManager:drawCurrency(365, y + 10, 0.8)
-    love.graphics.print(it.price, 385, y)
+    self.ui:drawText(75, y, it.displayName or it.id, 12, {0.2, 0.2, 0.2, 1})
+    self.iconManager:drawCurrency(375, y + 10, 0.8)
+    self.ui:drawText(385, y, tostring(it.price), 12, {0.2, 0.2, 0.2, 1})
     y = y + 50
   end
 
   self.iconManager:drawCurrency(45, 748, 0.9)
-  love.graphics.setColor(0.2, 0.2, 0.2)
-  love.graphics.print(self.pet.coins, 70, 740)
+  self.ui:drawText(55, 740, tostring(self.pet.coins), 12, {0.2, 0.2, 0.2, 1})
   self.ui:drawFooter("Clique em uma aba para filtrar ou clique no item para comprar.", 20, 770, 440)
 end
 
 function Store:mousepressed(x,y,b)
+  -- Close button
+  local closeX = 20 + 440 - 15 - 30
+  local closeY = 120 + 15
+  if x >= closeX and x <= closeX + 30 and y >= closeY and y <= closeY + 30 then
+    return "close"
+  end
   local tabX = 40
   for _,tab in ipairs(tabOrder) do
     local width = 90

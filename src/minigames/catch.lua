@@ -1,4 +1,7 @@
 -- src/minigame_catch.lua
+local UIElements = require("ui.ui_elements")
+local IconManager = require("ui.icon_manager")
+local cfg = require("data.config")
 local Minigame = {}
 Minigame.__index = Minigame
 
@@ -9,6 +12,9 @@ function Minigame.new()
   self.elapsed = 0
   self.score = 0
   self.finished = false
+  self.backgroundImage = love.graphics.newImage("assets/sprites/minigames/background-catch.jpeg")
+  self.ui = UIElements.new()
+  self.iconManager = IconManager.new()
   return self
 end
 
@@ -41,20 +47,16 @@ end
 
 function Minigame:draw()
   love.graphics.clear(0.9,0.95,1)
-  love.graphics.setColor(0,0,0)
-  love.graphics.print("Catch Fish Minigame", 160, 20)
-  love.graphics.print("Time: "..math.ceil(self.timer), 20, 40)
-  love.graphics.print("Score: "..self.score, 360, 40)
+  love.graphics.draw(self.backgroundImage, 0, 0, 0, cfg.gameWidth / self.backgroundImage:getWidth(), cfg.gameHeight / self.backgroundImage:getHeight())
   love.graphics.setColor(1,1,1)
   for _,t in ipairs(self.targets) do
-    love.graphics.setColor(0.6,0.8,1)
-    love.graphics.circle("fill", t.x, t.y, 14)
-    love.graphics.setColor(0,0,0)
-    love.graphics.circle("fill", t.x+4, t.y-2, 3)
+    self.iconManager:draw("fish", t.x, t.y, 5)
   end
+  self.ui:drawPanel(15, 15, 450, 60, "Pegue o peixe!")
+  self.ui:drawText(45, 50, "Tempo: "..math.floor(self.timer), 14, {0, 0, 0, 1})
+  self.ui:drawText(360, 50, "Pontos: "..self.score, 14, {0, 0, 0, 1})
   if self.finished then
-    love.graphics.setColor(0,0,0)
-    love.graphics.printf("Finished! Click to return", 0, 380, 480, "center")
+    self.ui:drawText(0, 380, "Finished! Click to return", 14, {0, 0, 0, 1})
   end
 end
 
@@ -67,11 +69,15 @@ function Minigame:mousepressed(x,y,b)
     local t = self.targets[i]
     local dx = x - t.x
     local dy = y - t.y
-    if dx*dx+dy*dy <= 14*14 then
+    if dx*dx+dy*dy <= 45*45 then
       table.remove(self.targets, i)
       self.score = self.score + 1
     end
   end
+end
+
+function Minigame:mousereleased(x,y,b)
+  -- no-op
 end
 
 function Minigame:getResult()

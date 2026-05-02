@@ -13,6 +13,14 @@ local petSprites = {}
 local itemSprites = {}
 local gameState = "main" -- "main", "minigame_select", "minigame", "store"
 local gameBackgroundImage = nil
+local push = require("lib.push")
+
+local _, _, windowWidth, windowHeight = love.window.getSafeArea()
+push:setupScreen(cfg.gameWidth, cfg.gameHeight, windowWidth, windowHeight, {fullscreen = true, resizable = false})
+
+function love.resize(w, h)
+  return push:resize(w, h)
+end
 
 function love.load()
   love.graphics.setDefaultFilter("nearest","nearest")
@@ -82,6 +90,7 @@ function love.update(dt)
 end
 
 function love.draw()
+  push:start()
   if gameState == "main" then
     love.graphics.clear(1,1,1)
 
@@ -90,10 +99,10 @@ function love.draw()
     else
       love.graphics.setColor(1, 1, 1)
     end
-    love.graphics.draw(gameBackgroundImage, 0, 0, 0, love.graphics:getWidth() / gameBackgroundImage:getWidth(), love.graphics:getHeight() / gameBackgroundImage:getHeight())
-    
-    local centerX = love.graphics.getWidth() / 2
-    local centerY = love.graphics.getHeight() / 2
+    love.graphics.draw(gameBackgroundImage, 0, 0, 0, cfg.gameWidth / gameBackgroundImage:getWidth(), cfg.gameHeight / gameBackgroundImage:getHeight())
+
+    local centerX = cfg.gameWidth / 2
+    local centerY = cfg.gameHeight / 2
     pet:draw(centerX, centerY, petSprites, itemSprites)
     ui:draw()
   elseif gameState == "minigame_select" then
@@ -104,12 +113,16 @@ function love.draw()
     love.graphics.clear(0.95,0.95,1)
     store:draw()
   end
+  push:finish()
 end
 
 function love.mousepressed(x,y,b)
+  x, y = push:toGame(x, y)
+  if x == nil or y == nil then return end
+
   if gameState == "main" then
     local action = ui:mousepressed(x,y,b)
-    print("Action:", action)
+    print("Action:", action, x, y)
     if action == "sleep" then
       pet:startSleep()
     end
@@ -133,11 +146,18 @@ function love.mousepressed(x,y,b)
   elseif gameState == "minigame" and minigame then
     minigame:mousepressed(x,y,b)
   elseif gameState == "store" then
-    store:mousepressed(x,y,b)
-    -- close store if clicked outside area (simple)
-    if not (x >= 20 and x <= 460 and y >= 120 and y <= 680) then
+    local action = store:mousepressed(x,y,b)
+    if action == "close" then
       gameState = "main"
     end
+  end
+end
+
+function love.mousereleased(x,y,b)
+  x, y = push:toGame(x, y)
+  
+  if gameState == "minigame" and minigame then
+    minigame:mousereleased(x,y,b)
   end
 end
 

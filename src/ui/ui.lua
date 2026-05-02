@@ -57,9 +57,7 @@ function UI:draw()
   
   for _, stat in ipairs(stats) do
     self:drawStatIcon(stat.x, stat.y, stat.icon)
-    love.graphics.setColor(0.2, 0.2, 0.2)
-    love.graphics.setFont(love.graphics.getFont())
-    love.graphics.print(stat.value, stat.x + 20, stat.y)
+    self.ui:drawText(stat.x + 20, stat.y, tostring(stat.value), nil, {0.2, 0.2, 0.2, 1})
   end
   
   -- Draw right panel stats
@@ -73,25 +71,13 @@ function UI:draw()
   }
   for _, stat in ipairs(stats_right) do
     self:drawStatIcon(stat.x, stat.y, stat.icon)
-    love.graphics.setColor(0.2, 0.2, 0.2)
-    love.graphics.setFont(love.graphics.getFont())
-    love.graphics.print(stat.value, stat.x + 20, stat.y)
+    self.ui:drawText(stat.x + 20, stat.y, tostring(stat.value), nil, {0.2, 0.2, 0.2, 1})
   end
 
   
   -- draw buttons
   for _,b in ipairs(self.buttons) do
-    love.graphics.setColor(1, 0.85, 0.9)
-    love.graphics.rectangle("fill", b.x, b.y, b.w, b.h, 8, 8)
-    
-    love.graphics.setColor(1, 0.7, 0.85)
-    love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", b.x, b.y, b.w, b.h, 8, 8)
-    love.graphics.setLineWidth(1)
-    
-    self:drawStatIcon(b.x + b.w / 2, b.y + b.h / 2 - 20, b.icon)
-    love.graphics.setColor(0.3, 0.1, 0.3)
-    love.graphics.printf(b.label, b.x + 5, b.y + 45, b.w, "center")
+    self.ui:drawButtonWithIcon(b.x, b.y, b.w, b.h, b.label, b.icon, self.iconManager)
   end
 
   -- inventory overlay

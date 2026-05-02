@@ -20,8 +20,7 @@ function MinigameSelector:draw()
   love.graphics.clear(0.93, 0.96, 1)
   self.ui:drawPanel(15, 15, 450, 755, "Selecione o Minigame")
 
-  love.graphics.setColor(0.35, 0.25, 0.45)
-  love.graphics.print("Escolha uma atividade para ganhar moedas e felicidade.", 35, 50)
+  self.ui:drawText(35, 50, "Escolha uma atividade para ganhar moedas e felicidade.", 14, {0.35, 0.25, 0.45, 1})
 
   for _, option in ipairs(self.options) do
     self.ui:drawButton(option.x, option.y, option.w, option.h, option.label, false)

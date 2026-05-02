@@ -1,6 +1,9 @@
 -- data/config.lua
 local cfg = {}
 
+cfg.gameWidth = 480
+cfg.gameHeight = 800
+
 cfg.decay = {
   hunger = 1.0,      -- por minuto
   cleanliness = 0.5, -- por minuto

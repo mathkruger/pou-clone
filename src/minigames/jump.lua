@@ -1,4 +1,6 @@
 -- src/minigame_jump.lua
+local UIElements = require("ui.ui_elements")
+local cfg = require("data.config")
 local Minigame = {}
 Minigame.__index = Minigame
 
@@ -7,12 +9,17 @@ local function generateCloud(y)
     x = math.random(60, 420),
     y = y,
     w = 90,
-    h = 16
+    h = 16,
+    timeOnCloud = 0,
+    maxTimeOnCloud = 0.5
   }
 end
 
 function Minigame.new()
   local self = setmetatable({}, Minigame)
+  self.ui = UIElements.new()
+  self.backgroundImage = love.graphics.newImage("assets/sprites/minigames/background-jump.jpeg")
+  self.playerSprite = love.graphics.newImage("assets/sprites/pet/pet-clean.png")
   self:reset()
   return self
 end
@@ -23,8 +30,9 @@ function Minigame:reset()
   self.score = 0
   self.finished = false
   self.onCloud = true
-  self.jumpPower = -500
+  self.jumpPower = -470
   self.gravity = 700
+  self.moveDirection = 0
 
   local startY = 520
   for i = 1, 6 do
@@ -33,6 +41,8 @@ function Minigame:reset()
   end
 
   local firstCloud = self.clouds[1]
+  firstCloud.isStartingCloud = true
+  self.firstActionDone = false
   self.player = { x = firstCloud.x + firstCloud.w / 2, y = firstCloud.y - 16, vy = 0, radius = 16 }
 end
 
@@ -47,6 +57,20 @@ end
 function Minigame:update(dt)
   if self.finished then return end
 
+  if not self.firstActionDone then
+    if self.moveDirection ~= 0 or love.keyboard.isDown("left") or love.keyboard.isDown("a") or love.keyboard.isDown("right") or love.keyboard.isDown("d") then
+      self.firstActionDone = true
+    end
+  end
+
+  -- Move player based on input (touch/mouse or keyboard)
+  if self.moveDirection == -1 then
+    self.player.x = self.player.x - 180 * dt
+  elseif self.moveDirection == 1 then
+    self.player.x = self.player.x + 180 * dt
+  end
+  
+  -- Fallback to keyboard for dev
   if love.keyboard.isDown("left") or love.keyboard.isDown("a") then
     self.player.x = self.player.x - 180 * dt
   elseif love.keyboard.isDown("right") or love.keyboard.isDown("d") then
@@ -74,8 +98,29 @@ function Minigame:update(dt)
   end
 
   for i = #self.clouds, 1, -1 do
-    if self.clouds[i].y > 700 then
+    local cloud = self.clouds[i]
+    if cloud.y > 700 then
       table.remove(self.clouds, i)
+    else
+      -- Update time on cloud
+      local footY = self.player.y + self.player.radius
+      local onThisCloud = (footY >= cloud.y and footY <= cloud.y + 10 and 
+                          self.player.x > cloud.x and self.player.x < cloud.x + cloud.w and
+                          self.player.vy >= 0)
+      
+      if onThisCloud then
+        if cloud.isStartingCloud and not self.firstActionDone then
+          cloud.timeOnCloud = 0
+        else
+          cloud.timeOnCloud = cloud.timeOnCloud + dt
+          -- Remove cloud if player stayed too long
+          if cloud.timeOnCloud > cloud.maxTimeOnCloud then
+            table.remove(self.clouds, i)
+          end
+        end
+      else
+        cloud.timeOnCloud = 0
+      end
     end
   end
 
@@ -98,12 +143,9 @@ function Minigame:update(dt)
 end
 
 function Minigame:draw()
-  love.graphics.clear(0.8, 0.95, 1)
-  love.graphics.setColor(0, 0, 0)
-  love.graphics.print("Jump Cloud Minigame", 120, 20)
-  love.graphics.print("Score: "..self.score, 360, 40)
-  love.graphics.print("Altura: "..math.floor(self.height), 20, 40)
-  love.graphics.print("Use setas / A D para mover e clique para pular", 20, 70)
+  love.graphics.clear(0, 0, 0)
+  love.graphics.setColor(1, 1, 1)
+  love.graphics.draw(self.backgroundImage, 0, 0, 0, cfg.gameWidth / self.backgroundImage:getWidth(), cfg.gameHeight / self.backgroundImage:getHeight())
 
   love.graphics.setColor(1, 1, 1)
   for _,c in ipairs(self.clouds) do
@@ -113,14 +155,21 @@ function Minigame:draw()
     love.graphics.rectangle("line", c.x, c.y, c.w, c.h, 8, 8)
   end
 
-  love.graphics.setColor(1, 0.9, 0.6)
-  love.graphics.circle("fill", self.player.x, self.player.y, self.player.radius)
-  love.graphics.setColor(0, 0, 0)
-  love.graphics.circle("fill", self.player.x-6, self.player.y-4, 3)
-  love.graphics.circle("fill", self.player.x+6, self.player.y-4, 3)
-  love.graphics.setLineWidth(3)
-  love.graphics.arc("line", self.player.x, self.player.y+6, 8, math.rad(20), math.rad(160))
+  love.graphics.setColor(1, 1, 1)
+  love.graphics.draw(
+    self.playerSprite,
+    self.player.x,
+    self.player.y,
+    0,
+    0.7,
+    0.7,
+    self.playerSprite:getWidth() / 2,
+    self.playerSprite:getHeight() / 2
+  )
 
+  self.ui:drawPanel(15, 15, 450, 60, "Nuvens")
+  self.ui:drawText(45, 50, "Altura: "..math.floor(self.height), 14, {0, 0, 0, 1})
+  self.ui:drawText(360, 50, "Score: "..self.score, 14, {0, 0, 0, 1})
   if self.finished then
     love.graphics.setColor(0, 0, 0)
     love.graphics.printf("Game Over! Clique para voltar", 0, 380, 480, "center")
@@ -131,10 +180,24 @@ function Minigame:mousepressed(x,y,b)
   if self.finished then
     return
   end
+  
+  -- Set move direction based on click position
+  if x < 240 then
+    self.moveDirection = -1
+  else
+    self.moveDirection = 1
+  end
+  
+  -- Jump if on cloud
   if self.onCloud then
     self.player.vy = self.jumpPower
     self.onCloud = false
   end
+end
+
+function Minigame:mousereleased(x,y,b)
+  -- Stop moving when mouse is released
+  self.moveDirection = 0
 end
 
 function Minigame:getResult()

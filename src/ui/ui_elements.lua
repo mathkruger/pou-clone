@@ -31,8 +31,7 @@ function UIElements:drawPanel(x, y, w, h, title)
   love.graphics.setLineWidth(1)
 
   if title then
-    love.graphics.setColor(unpack(self.style.titleText))
-    love.graphics.print(title, x + 20, y + 16)
+    self:drawText(x + 20, y + 10, title, 18, self.style.titleText)
   end
 end
 
@@ -60,6 +59,24 @@ function UIElements:drawButton(x, y, w, h, label, selected)
   self:drawCard(x, y, w, h, selected)
   love.graphics.setColor(unpack(self.style.buttonText))
   love.graphics.printf(label, x, y + h / 2 - 7, w, "center")
+end
+
+function UIElements:drawButtonWithIcon(x, y, w, h, label, icon, iconManager)
+  self:drawCard(x, y, w, h, false)  -- assuming not selected for now
+  if icon and iconManager then
+    iconManager:draw(icon, x + w / 2, y + h / 2 - 20, 1.5)
+  end
+  love.graphics.setColor(unpack(self.style.buttonText))
+  love.graphics.printf(label, x + 5, y + 45, w - 10, "center")  -- adjusted width
+end
+
+function UIElements:drawText(x, y, text, fontSize, color)
+  local currentFont = love.graphics.getFont()
+  local newFont = love.graphics.newFont(fontSize or currentFont:getHeight())
+  love.graphics.setFont(newFont)
+  love.graphics.setColor(color or self.style.labelText)
+  love.graphics.print(text, x, y)
+  love.graphics.setFont(currentFont)
 end
 
 function UIElements:drawFooter(text, x, y, w)

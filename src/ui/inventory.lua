@@ -46,6 +46,11 @@ end
 function Inventory:draw()
   self.ui:drawPanel(30, 140, 420, 520, "Inventário")
 
+  -- Close button
+  local closeX = 30 + 420 - 15 - 30
+  local closeY = 140 + 15
+  self.ui:drawButton(closeX, closeY, 30, 30, "X", false)
+
   local activeTab = self:getActiveTab()
   local title = "Todos os itens"
   if activeTab == "food" then
@@ -56,8 +61,7 @@ function Inventory:draw()
     title = "Escolha um item de look"
   end
 
-  love.graphics.setColor(0.4, 0.4, 0.4)
-  love.graphics.print(title, 50, 185)
+  self.ui:drawText(50, 185, title, 16, {0.4, 0.4, 0.4, 1})
 
   local tabX = 50
   for _,tab in ipairs(inventoryTabs) do
@@ -85,8 +89,7 @@ function Inventory:draw()
     if activeTab == "all" then
       message = "Seu inventário está vazio."
     end
-    love.graphics.setColor(0.6, 0.6, 0.6)
-    love.graphics.print(message, 50, y)
+    self.ui:drawText(50, y, message, 14, {0.6, 0.6, 0.6, 1})
   else
     for _,entry in ipairs(filtered) do
       local displayName = entry.config.displayName or entry.id
@@ -101,8 +104,7 @@ function Inventory:draw()
 
       self.ui:drawCard(40, y - 5, 400, 35, false)
       self.iconManager:drawType(entry.config.type, 57, y + 9, 0.85)
-      love.graphics.setColor(0.2, 0.2, 0.2)
-      love.graphics.print(displayName .. equipped .. " x" .. entry.qty, 75, y)
+      self.ui:drawText(75, y, displayName .. equipped .. " x" .. entry.qty, 12, {0.2, 0.2, 0.2, 1})
       self.ui:drawButton(370, y - 2, 55, 25, "[Usar]", false)
       y = y + 40
     end
@@ -111,6 +113,14 @@ end
 
 function Inventory:mousepressed(x,y,b)
   if not self.opened then
+    return nil
+  end
+
+  -- Close button
+  local closeX = 30 + 420 - 15 - 30
+  local closeY = 140 + 15
+  if x >= closeX and x <= closeX + 30 and y >= closeY and y <= closeY + 30 then
+    self:close()
     return nil
   end
 
@@ -149,9 +159,6 @@ function Inventory:mousepressed(x,y,b)
     y0 = y0 + 40
   end
 
-  if not (x >= 30 and x <= 450 and y >= 140 and y <= 660) then
-    self:close()
-  end
   return nil
 end
 
