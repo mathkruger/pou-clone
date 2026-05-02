@@ -1,4 +1,5 @@
 -- src/ui/inventory.lua
+local cfg = require("data.config")
 local UIElements = require("ui.ui_elements")
 local IconManager = require("ui.icon_manager")
 local Inventory = {}
@@ -44,11 +45,14 @@ function Inventory:getActiveTab()
 end
 
 function Inventory:draw()
-  self.ui:drawPanel(30, 140, 420, 520, "Inventário")
+  local panelX = 30
+  local panelY = 140
+  local panelWidth = cfg.gameWidth - 2 * panelX
+  local panelHeight = cfg.gameHeight - panelY - 20
+  self.ui:drawPanel(panelX, panelY, panelWidth, panelHeight, "Inventário")
 
-  -- Close button
-  local closeX = 30 + 420 - 15 - 30
-  local closeY = 140 + 15
+  local closeX = panelX + panelWidth - 15 - 30
+  local closeY = panelY + 15
   self.ui:drawButton(closeX, closeY, 30, 30, "X", false)
 
   local activeTab = self:getActiveTab()
@@ -61,16 +65,16 @@ function Inventory:draw()
     title = "Escolha um item de look"
   end
 
-  self.ui:drawText(50, 185, title, 16, {0.4, 0.4, 0.4, 1})
+  self.ui:drawText(panelX + 15, panelY + 45, title, 16, {0.4, 0.4, 0.4, 1})
 
-  local tabX = 50
+  local tabX = panelX + 15
+  local tabWidth = math.min(90, math.max(70, (panelWidth - 80) / #inventoryTabs))
   for _,tab in ipairs(inventoryTabs) do
-    local width = 85
-    self.ui:drawTab(tabX, 215, width, 30, inventoryTabLabels[tab] or tab, tab == activeTab)
-    tabX = tabX + width + 5
+    self.ui:drawTab(tabX, panelY + 75, tabWidth, 30, inventoryTabLabels[tab] or tab, tab == activeTab)
+    tabX = tabX + tabWidth + 5
   end
 
-  local y = 270
+  local y = panelY + 130
   local items = require("data.items")
   local filtered = {}
   for id,qty in pairs(self.pet.inventory) do
@@ -89,8 +93,10 @@ function Inventory:draw()
     if activeTab == "all" then
       message = "Seu inventário está vazio."
     end
-    self.ui:drawText(50, y, message, 14, {0.6, 0.6, 0.6, 1})
+    self.ui:drawText(panelX + 15, y, message, 14, {0.6, 0.6, 0.6, 1})
   else
+    local cardWidth = panelWidth - 30
+    local actionX = panelX + panelWidth - 80
     for _,entry in ipairs(filtered) do
       local displayName = entry.config.displayName or entry.id
       local equipped = ""
@@ -102,10 +108,10 @@ function Inventory:draw()
         equipped = " (equipado)"
       end
 
-      self.ui:drawCard(40, y - 5, 400, 35, false)
-      self.iconManager:drawType(entry.config.type, 57, y + 9, 0.85)
-      self.ui:drawText(75, y, displayName .. equipped .. " x" .. entry.qty, 12, {0.2, 0.2, 0.2, 1})
-      self.ui:drawButton(370, y - 2, 55, 25, "[Usar]", false)
+      self.ui:drawCard(panelX + 15, y - 10, cardWidth, 35, false)
+      self.iconManager:drawType(entry.config.type, panelX + 30, y + 9, 0.85)
+      self.ui:drawText(panelX + 40, y, displayName .. equipped .. " x" .. entry.qty, 12, {0.2, 0.2, 0.2, 1})
+      self.ui:drawButton(actionX, y - 5, 55, 25, "[Usar]", false)
       y = y + 40
     end
   end
@@ -116,27 +122,31 @@ function Inventory:mousepressed(x,y,b)
     return nil
   end
 
-  -- Close button
-  local closeX = 30 + 420 - 15 - 30
-  local closeY = 140 + 15
+  local panelX = 30
+  local panelY = 140
+  local panelWidth = cfg.gameWidth - 2 * panelX
+
+  local closeX = panelX + panelWidth - 15 - 30
+  local closeY = panelY + 15
   if x >= closeX and x <= closeX + 30 and y >= closeY and y <= closeY + 30 then
     self:close()
     return nil
   end
 
   local activeTab = self:getActiveTab()
-  local tabX = 50
+  local tabX = panelX + 20
+  local tabWidth = math.min(90, math.max(70, (panelWidth - 80) / #inventoryTabs))
   for _,tab in ipairs(inventoryTabs) do
-    local width = 85
-    if x >= tabX and x <= tabX + width and y >= 215 and y <= 245 then
+    if x >= tabX and x <= tabX + tabWidth and y >= panelY + 75 and y <= panelY + 105 then
       self.activeTab = tab
       self.inventoryFilter = nil
       return nil
     end
-    tabX = tabX + width + 5
+    tabX = tabX + tabWidth + 5
   end
 
-  local y0 = 270
+  local y0 = panelY + 130
+  local actionX = panelX + panelWidth - 90
   local items = require("data.items")
   local filtered = {}
   for id,qty in pairs(self.pet.inventory) do
@@ -151,9 +161,8 @@ function Inventory:mousepressed(x,y,b)
   end
 
   for _,entry in ipairs(filtered) do
-    if x >= 370 and x <= 425 and y >= y0 - 2 and y <= y0 + 23 then
+    if x >= actionX and x <= actionX + 55 and y >= y0 - 2 and y <= y0 + 23 then
       self.pet:useItemById(entry.id)
-      self:close()
       return "inventory_used"
     end
     y0 = y0 + 40

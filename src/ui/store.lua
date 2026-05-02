@@ -1,4 +1,5 @@
 -- src/ui/store.lua
+local cfg = require("data.config")
 local items = require("data.items")
 local UIElements = require("ui.ui_elements")
 local IconManager = require("ui.icon_manager")
@@ -38,58 +39,67 @@ function Store:getFilteredItems()
 end
 
 function Store:draw()
-  self.ui:drawPanel(20, 120, 440, 560, "Loja")
+  local panelX = 30
+  local panelY = 40
+  local panelWidth = cfg.gameWidth - 2 * panelX
+  local panelHeight = cfg.gameHeight - panelY - 20
+  self.ui:drawPanel(panelX, panelY, panelWidth, panelHeight, "Loja")
 
-  -- Close button
-  local closeX = 20 + 440 - 15 - 30
-  local closeY = 120 + 15
+  local closeX = panelX + panelWidth - 15 - 30
+  local closeY = panelY + 15
   self.ui:drawButton(closeX, closeY, 30, 30, "X", false)
 
-  local tabX = 40
+  local tabX = panelX + 15
+  local tabWidth = math.min(100, math.max(70, (panelWidth - 80) / #tabOrder))
   for _,tab in ipairs(tabOrder) do
-    local width = 90
-    self.ui:drawTab(tabX, 170, width, 28, tabLabels[tab] or tab, tab == self.activeTab)
-    tabX = tabX + width + 8
+    self.ui:drawTab(tabX, panelY + 50, tabWidth, 28, tabLabels[tab] or tab, tab == self.activeTab)
+    tabX = tabX + tabWidth + 8
   end
 
   local visibleItems = self:getFilteredItems()
-  local y = 220
+  local y = panelY + 100
+  local cardWidth = panelWidth - 30
   for i,it in ipairs(visibleItems) do
-    self.ui:drawCard(30, y - 6, 420, 44, i == self.selected)
-    self.iconManager:drawType(it.type, 50, y + 10, 0.85)
-    self.ui:drawText(75, y, it.displayName or it.id, 12, {0.2, 0.2, 0.2, 1})
-    self.iconManager:drawCurrency(375, y + 10, 0.8)
-    self.ui:drawText(385, y, tostring(it.price), 12, {0.2, 0.2, 0.2, 1})
+    self.ui:drawCard(panelX + 15, y - 10, cardWidth, 35, i == self.selected)
+    self.iconManager:drawType(it.type, panelX + 30, y + 10, 0.85)
+    self.ui:drawText(panelX + 40, y, it.displayName or it.id, 12, {0.2, 0.2, 0.2, 1})
+    self.iconManager:drawCurrency(panelX + panelWidth - 65, y + 10, 0.8)
+    self.ui:drawText(panelX + panelWidth - 55, y, tostring(it.price), 12, {0.2, 0.2, 0.2, 1})
     y = y + 50
   end
 
-  self.iconManager:drawCurrency(45, 748, 0.9)
-  self.ui:drawText(55, 740, tostring(self.pet.coins), 12, {0.2, 0.2, 0.2, 1})
-  self.ui:drawFooter("Clique em uma aba para filtrar ou clique no item para comprar.", 20, 770, 440)
+  self.iconManager:drawCurrency(panelX + 15, panelY + panelHeight - 15, 0.9)
+  self.ui:drawText(panelX + 25, panelY + panelHeight - 24, tostring(self.pet.coins), 12, {0.2, 0.2, 0.2, 1})
 end
 
 function Store:mousepressed(x,y,b)
-  -- Close button
-  local closeX = 20 + 440 - 15 - 30
-  local closeY = 120 + 15
+  local panelX = 30
+  local panelY = 40
+  local panelWidth = cfg.gameWidth - 2 * panelX
+
+  local closeX = panelX + panelWidth - 15 - 30
+  local closeY = panelY + 15
   if x >= closeX and x <= closeX + 30 and y >= closeY and y <= closeY + 30 then
     return "close"
   end
-  local tabX = 40
+
+  local tabX = panelX + 15
+  local tabWidth = math.min(100, math.max(70, (panelWidth - 80) / #tabOrder))
   for _,tab in ipairs(tabOrder) do
-    local width = 90
-    if x >= tabX and x <= tabX + width and y >= 170 and y <= 198 then
+    if x >= tabX and x <= tabX + tabWidth and y >= panelY + 50 and y <= panelY + 78 then
       self.activeTab = tab
       self.selected = 1
       return
     end
-    tabX = tabX + width + 8
+    tabX = tabX + tabWidth + 8
   end
 
   local visibleItems = self:getFilteredItems()
-  local y0 = 220
+  local y0 = panelY + 100
+  local itemLeft = panelX + 10
+  local itemRight = panelX + panelWidth - 20
   for i,it in ipairs(visibleItems) do
-    if x >= 30 and x <= 450 and y >= y0-6 and y <= y0+38 then
+    if x >= itemLeft and x <= itemRight and y >= y0 - 6 and y <= y0 + 38 then
       self.selected = i
       if self.pet.coins >= it.price then
         self.pet.coins = self.pet.coins - it.price

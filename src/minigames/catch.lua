@@ -32,13 +32,15 @@ function Minigame:update(dt)
   self.timer = math.max(0, self.timer - dt)
   -- spawn target occasionally
   if math.random() < 0.02 then
-    table.insert(self.targets, {x = math.random(40,440), y = -20, vy = 60 + math.random()*80})
+    local minX = 40
+    local maxX = math.max(minX, cfg.gameWidth - 40)
+    table.insert(self.targets, {x = math.random(minX, maxX), y = -20, vy = 60 + math.random() * 80})
   end
   -- update targets
   for i=#self.targets,1,-1 do
     local t = self.targets[i]
     t.y = t.y + t.vy * dt
-    if t.y > 900 then table.remove(self.targets, i) end
+    if t.y > cfg.gameHeight + cfg.gameHeight * 0.4 then table.remove(self.targets, i) end
   end
   if self.timer <= 0 then
     self.finished = true
@@ -52,11 +54,11 @@ function Minigame:draw()
   for _,t in ipairs(self.targets) do
     self.iconManager:draw("fish", t.x, t.y, 5)
   end
-  self.ui:drawPanel(15, 15, 450, 60, "Pegue o peixe!")
+  self.ui:drawPanel(15, 15, cfg.gameWidth - 30, 60, "Pegue o peixe!")
   self.ui:drawText(45, 50, "Tempo: "..math.floor(self.timer), 14, {0, 0, 0, 1})
-  self.ui:drawText(360, 50, "Pontos: "..self.score, 14, {0, 0, 0, 1})
+  self.ui:drawText(cfg.gameWidth - 120, 50, "Pontos: "..self.score, 14, {0, 0, 0, 1})
   if self.finished then
-    self.ui:drawText(0, 380, "Finished! Click to return", 14, {0, 0, 0, 1})
+    self.ui:drawText(0, cfg.gameHeight / 2, "Finished! Click to return", 14, {0, 0, 0, 1})
   end
 end
 

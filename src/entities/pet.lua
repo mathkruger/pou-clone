@@ -3,7 +3,7 @@ local json = require("lib.dkjson") -- se não tiver, substitua por um serializer
 local Save = require("entities.save")
 local cfg = require("data.config")
 
-local SCALE_FACTOR = 3
+local SCALE_FACTOR = 4
 
 local Pet = {}
 Pet.__index = Pet
@@ -22,7 +22,10 @@ local function defaultPet()
     inventory = {},
     outfits = {},
     sleeping = false,
-    lastUpdate = os.time()
+    lastUpdate = os.time(),
+    musicVolume = 0.65,
+    ambienceVolume = 0.45,
+    effectsVolume = 0.85,
   }
 end
 
@@ -46,6 +49,9 @@ function Pet.load()
     if not s.outfits then
       s.outfits = {}
     end
+    s.musicVolume = s.musicVolume or 0.65
+    s.ambienceVolume = s.ambienceVolume or 0.45
+    s.effectsVolume = s.effectsVolume or 0.85
     return s
   else
     return setmetatable(defaultPet(), Pet)
@@ -188,6 +194,8 @@ function Pet:drawCosmetic(x, y, itemSprites, petSprite)
   end
 end
 
+local Audio = require("audio")
+
 function Pet:draw(x,y, sprites, itemSprites)
   local state = self:getVisualState()
   local sprite = sprites and sprites[state]
@@ -222,9 +230,11 @@ function Pet:useItemById(id)
     self:hungerAdd(itemConfig.hungerRestore or 0)
     self:changeStat("cleanliness", -(itemConfig.cleanlinessPenalty or 0))
     self:addXP(3)
+    Audio.playEat()
   elseif itemConfig.type == "hygiene" then
     self:changeStat("cleanliness", itemConfig.cleanRestore or 40)
     self:addXP(2)
+    Audio.playBath()
   elseif itemConfig.type == "cosmetic" then
     if itemConfig.slot then
       if self.outfits[itemConfig.slot] == id then

@@ -5,8 +5,10 @@ local Minigame = {}
 Minigame.__index = Minigame
 
 local function generateCloud(y)
+  local minX = 60
+  local maxX = math.max(minX, cfg.gameWidth - 60)
   return {
-    x = math.random(60, 420),
+    x = math.random(minX, maxX),
     y = y,
     w = 90,
     h = 16,
@@ -34,7 +36,7 @@ function Minigame:reset()
   self.gravity = 700
   self.moveDirection = 0
 
-  local startY = 520
+  local startY = cfg.gameHeight * 0.8125
   for i = 1, 6 do
     table.insert(self.clouds, generateCloud(startY))
     startY = startY - math.random(80, 120)
@@ -77,19 +79,20 @@ function Minigame:update(dt)
     self.player.x = self.player.x + 180 * dt
   end
 
-  self.player.x = math.max(self.player.radius, math.min(480 - self.player.radius, self.player.x))
+  self.player.x = math.max(self.player.radius, math.min(cfg.gameWidth - self.player.radius, self.player.x))
 
   self.player.vy = self.player.vy + self.gravity * dt
   self.player.y = self.player.y + self.player.vy * dt
 
-  if self.player.y > 700 then
+  if self.player.y > cfg.gameHeight + 60 then
     self.finished = true
     return
   end
 
-  if self.player.y < 250 then
-    local dy = 250 - self.player.y
-    self.player.y = 250
+  local ceilingY = cfg.gameHeight * 0.39
+  if self.player.y < ceilingY then
+    local dy = ceilingY - self.player.y
+    self.player.y = ceilingY
     self.height = self.height + dy
     self.score = math.max(self.score, math.floor(self.height / 100))
     for _,c in ipairs(self.clouds) do
@@ -99,7 +102,7 @@ function Minigame:update(dt)
 
   for i = #self.clouds, 1, -1 do
     local cloud = self.clouds[i]
-    if cloud.y > 700 then
+    if cloud.y > cfg.gameHeight + 220 then
       table.remove(self.clouds, i)
     else
       -- Update time on cloud
@@ -126,7 +129,17 @@ function Minigame:update(dt)
 
   while #self.clouds < 6 do
     local top = self:getHighestCloudY()
+    if top == math.huge then
+      top = cfg.gameHeight * 0.8
+    end
     table.insert(self.clouds, generateCloud(top - math.random(80, 120)))
+  end
+
+  local top = self:getHighestCloudY()
+  local spawnThreshold = cfg.gameHeight * 0.3
+  while top > spawnThreshold do
+    top = top - math.random(80, 120)
+    table.insert(self.clouds, generateCloud(top))
   end
 
   if self.player.vy > 0 then
@@ -167,12 +180,12 @@ function Minigame:draw()
     self.playerSprite:getHeight() / 2
   )
 
-  self.ui:drawPanel(15, 15, 450, 60, "Nuvens")
+  self.ui:drawPanel(15, 15, cfg.gameWidth - 30, 60, "Nuvens")
   self.ui:drawText(45, 50, "Altura: "..math.floor(self.height), 14, {0, 0, 0, 1})
-  self.ui:drawText(360, 50, "Score: "..self.score, 14, {0, 0, 0, 1})
+  self.ui:drawText(cfg.gameWidth - 120, 50, "Score: "..self.score, 14, {0, 0, 0, 1})
   if self.finished then
     love.graphics.setColor(0, 0, 0)
-    love.graphics.printf("Game Over! Clique para voltar", 0, 380, 480, "center")
+    love.graphics.printf("Game Over! Clique para voltar", 0, cfg.gameHeight / 2, cfg.gameWidth, "center")
   end
 end
 
@@ -180,15 +193,14 @@ function Minigame:mousepressed(x,y,b)
   if self.finished then
     return
   end
-  
-  -- Set move direction based on click position
-  if x < 240 then
+
+  local midX = cfg.gameWidth / 2
+  if x < midX then
     self.moveDirection = -1
   else
     self.moveDirection = 1
   end
-  
-  -- Jump if on cloud
+
   if self.onCloud then
     self.player.vy = self.jumpPower
     self.onCloud = false

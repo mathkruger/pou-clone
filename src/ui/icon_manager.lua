@@ -14,7 +14,8 @@ local iconNames = {
   "dancing-man",
   "shop",
   "briefcase",
-  "fish"
+  "fish",
+  "control-panel"
 }
 
 local typeIcons = {
